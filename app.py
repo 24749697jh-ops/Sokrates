@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import io
 import mimetypes
 import os
 import re
@@ -9,6 +10,7 @@ from typing import Any
 import streamlit as st
 from dotenv import load_dotenv
 from openai import OpenAI
+from streamlit_paste_button import paste_image_button
 
 from tutor_prompt import SOKRATES_INSTRUCTIONS
 
@@ -43,36 +45,25 @@ st.markdown(
 
 
 def normalize_math_markdown(text: str) -> str:
-    """
-    Vereinheitlicht häufige LaTeX-Ausgaben für Streamlit.
-
-    Das Modell soll bereits $...$ und $$...$$ liefern. Diese Funktion ist
-    eine zusätzliche Absicherung für Antworten mit \\(...\\) oder \\[...\\].
-    """
     if not text:
         return text
 
-    # Abgesetzte Mathematik zuerst umwandeln.
     text = re.sub(
         r"\\\[\s*(.*?)\s*\\\]",
         lambda match: f"\n$$\n{match.group(1).strip()}\n$$\n",
         text,
         flags=re.DOTALL,
     )
-
-    # Inline-Mathematik umwandeln.
     text = re.sub(
         r"\\\(\s*(.*?)\s*\\\)",
         lambda match: f"${match.group(1).strip()}$",
         text,
         flags=re.DOTALL,
     )
-
     return text
 
 
 def render_chat_content(content: str) -> None:
-    """Zeigt Text und Mathematik in Streamlit-kompatiblem Markdown an."""
     st.markdown(normalize_math_markdown(content))
 
 
@@ -102,6 +93,15 @@ def ensure_state() -> None:
 def data_url(file_bytes: bytes, mime_type: str) -> str:
     encoded = base64.b64encode(file_bytes).decode("utf-8")
     return f"data:{mime_type};base64,{encoded}"
+
+
+def store_pasted_image(image: Any) -> None:
+    """Speichert ein aus GoodNotes/der Zwischenablage eingefügtes Bild."""
+    image_buffer = io.BytesIO()
+    image.convert("RGB").save(image_buffer, format="PNG")
+    st.session_state.uploaded_name = "goodnotes-zwischenablage.png"
+    st.session_state.uploaded_bytes = image_buffer.getvalue()
+    st.session_state.uploaded_mime = "image/png"
 
 
 def build_first_user_content(task_text: str) -> list[dict[str, Any]]:
@@ -224,13 +224,37 @@ if not st.session_state.task_started:
     )
 
     task_text = st.text_area(
-        "Aufgabe hineinkopieren",
+        "Aufgabe als Text eingeben",
         placeholder="Zum Beispiel: Ein Rechteck ist 6 cm länger als breit ...",
         height=170,
     )
 
+    st.markdown("### Aus GoodNotes einfügen")
+    st.caption(
+        "In GoodNotes mit dem Lasso markieren, „Kopieren“ wählen und danach "
+        "hier auf den Button tippen."
+    )
+
+    paste_result = paste_image_button(
+        label="📋 Aus Zwischenablage einfügen",
+        key="goodnotes_paste_button",
+        errors="raise",
+    )
+
+    if paste_result.image_data is not None:
+        store_pasted_image(paste_result.image_data)
+        st.success("Die Aufgabe aus GoodNotes wurde eingefügt.")
+        st.image(
+            paste_result.image_data,
+            caption="Eingefügte Aufgabe",
+            use_container_width=True,
+        )
+    elif st.session_state.uploaded_name == "goodnotes-zwischenablage.png":
+        st.success("Die Aufgabe aus GoodNotes ist bereit.")
+
+    st.markdown("### Oder eine Datei hochladen")
     upload = st.file_uploader(
-        "Oder PDF, Bild, Word-Datei oder Textdatei hochladen",
+        "PDF, Bild, Word-Datei oder Textdatei auswählen",
         type=SUPPORTED_TYPES,
         help=f"Maximal {MAX_FILE_SIZE_MB} MB.",
     )
@@ -240,6 +264,12 @@ if not st.session_state.task_started:
         if size_mb > MAX_FILE_SIZE_MB:
             st.error(f"Die Datei ist größer als {MAX_FILE_SIZE_MB} MB.")
         else:
+            st.session_state.uploaded_name = upload.name
+            st.session_state.uploaded_bytes = upload.getvalue()
+            guessed_mime = upload.type or mimetypes.guess_type(upload.name)[0]
+            st.session_state.uploaded_mime = (
+                guessed_mime or "application/octet-stream"
+            )
             st.success(f"Datei bereit: {upload.name} ({size_mb:.1f} MB)")
 
     start = st.button(
@@ -249,26 +279,20 @@ if not st.session_state.task_started:
     )
 
     if start:
+        has_task = (
+            bool(task_text.strip())
+            or st.session_state.uploaded_bytes is not None
+        )
+
         if not api_key:
             st.error("Bitte trage links deinen OpenAI API-Key ein.")
-        elif not task_text.strip() and upload is None:
-            st.error("Bitte gib eine Aufgabe ein oder lade eine Datei hoch.")
-        elif (
-            upload is not None
-            and len(upload.getvalue()) > MAX_FILE_SIZE_MB * 1024 * 1024
-        ):
-            st.error("Die Datei ist zu groß.")
+        elif not has_task:
+            st.error(
+                "Bitte gib eine Aufgabe ein, füge sie aus GoodNotes ein "
+                "oder lade eine Datei hoch."
+            )
         else:
             st.session_state.task_text = task_text
-            if upload is not None:
-                raw = upload.getvalue()
-                guessed_mime = upload.type or mimetypes.guess_type(upload.name)[0]
-                st.session_state.uploaded_name = upload.name
-                st.session_state.uploaded_bytes = raw
-                st.session_state.uploaded_mime = (
-                    guessed_mime or "application/octet-stream"
-                )
-
             st.session_state.messages = [
                 {"role": "user", "content": task_text}
             ]
