@@ -3,7 +3,7 @@ from __future__ import annotations
 import base64
 import mimetypes
 import os
-from pathlib import Path
+import re
 from typing import Any
 
 import streamlit as st
@@ -42,6 +42,40 @@ st.markdown(
 )
 
 
+def normalize_math_markdown(text: str) -> str:
+    """
+    Vereinheitlicht häufige LaTeX-Ausgaben für Streamlit.
+
+    Das Modell soll bereits $...$ und $$...$$ liefern. Diese Funktion ist
+    eine zusätzliche Absicherung für Antworten mit \\(...\\) oder \\[...\\].
+    """
+    if not text:
+        return text
+
+    # Abgesetzte Mathematik zuerst umwandeln.
+    text = re.sub(
+        r"\\\[\s*(.*?)\s*\\\]",
+        lambda match: f"\n$$\n{match.group(1).strip()}\n$$\n",
+        text,
+        flags=re.DOTALL,
+    )
+
+    # Inline-Mathematik umwandeln.
+    text = re.sub(
+        r"\\\(\s*(.*?)\s*\\\)",
+        lambda match: f"${match.group(1).strip()}$",
+        text,
+        flags=re.DOTALL,
+    )
+
+    return text
+
+
+def render_chat_content(content: str) -> None:
+    """Zeigt Text und Mathematik in Streamlit-kompatiblem Markdown an."""
+    st.markdown(normalize_math_markdown(content))
+
+
 def reset_session() -> None:
     st.session_state.messages = []
     st.session_state.task_started = False
@@ -76,8 +110,11 @@ def build_first_user_content(task_text: str) -> list[dict[str, Any]]:
     prompt = (
         "Hier ist meine Mathematikaufgabe. Beginne mit der Phase VERSTEHEN. "
         "Stelle zunächst genau eine hilfreiche Frage. "
-        "Rechne noch nichts vor und verrate kein Ergebnis.\n\n"
-        f"Zusätzlicher Text des Schülers:\n{task_text.strip() or '(kein zusätzlicher Text)'}"
+        "Rechne noch nichts vor und verrate kein Ergebnis. "
+        "Verwende für mathematische Schreibweisen ausschließlich "
+        "Streamlit-kompatibles Markdown-LaTeX mit $...$ oder $$...$$.\n\n"
+        f"Zusätzlicher Text des Schülers:\n"
+        f"{task_text.strip() or '(kein zusätzlicher Text)'}"
     )
     content.append({"type": "input_text", "text": prompt})
 
@@ -115,7 +152,10 @@ def build_api_input() -> list[dict[str, Any]]:
         if message["role"] == "user":
             if index == 0:
                 api_input.append(
-                    {"role": "user", "content": build_first_user_content(message["content"])}
+                    {
+                        "role": "user",
+                        "content": build_first_user_content(message["content"]),
+                    }
                 )
             else:
                 api_input.append(
@@ -147,7 +187,10 @@ def get_answer(api_key: str, model: str) -> str:
 ensure_state()
 
 st.title("🧭 Sokrates")
-st.markdown('<div class="motto">Ich begleite dich – denken musst du selbst.</div>', unsafe_allow_html=True)
+st.markdown(
+    '<div class="motto">Ich begleite dich – denken musst du selbst.</div>',
+    unsafe_allow_html=True,
+)
 st.write(
     "Ein Mathematik-Lerncoach, der zuerst mit dir versteht und plant – "
     "und erst danach beim Rechnen begleitet."
@@ -199,14 +242,21 @@ if not st.session_state.task_started:
         else:
             st.success(f"Datei bereit: {upload.name} ({size_mb:.1f} MB)")
 
-    start = st.button("Mit Sokrates beginnen", type="primary", use_container_width=True)
+    start = st.button(
+        "Mit Sokrates beginnen",
+        type="primary",
+        use_container_width=True,
+    )
 
     if start:
         if not api_key:
             st.error("Bitte trage links deinen OpenAI API-Key ein.")
         elif not task_text.strip() and upload is None:
             st.error("Bitte gib eine Aufgabe ein oder lade eine Datei hoch.")
-        elif upload is not None and len(upload.getvalue()) > MAX_FILE_SIZE_MB * 1024 * 1024:
+        elif (
+            upload is not None
+            and len(upload.getvalue()) > MAX_FILE_SIZE_MB * 1024 * 1024
+        ):
             st.error("Die Datei ist zu groß.")
         else:
             st.session_state.task_text = task_text
@@ -215,42 +265,63 @@ if not st.session_state.task_started:
                 guessed_mime = upload.type or mimetypes.guess_type(upload.name)[0]
                 st.session_state.uploaded_name = upload.name
                 st.session_state.uploaded_bytes = raw
-                st.session_state.uploaded_mime = guessed_mime or "application/octet-stream"
+                st.session_state.uploaded_mime = (
+                    guessed_mime or "application/octet-stream"
+                )
 
-            st.session_state.messages = [{"role": "user", "content": task_text}]
+            st.session_state.messages = [
+                {"role": "user", "content": task_text}
+            ]
             st.session_state.task_started = True
 
             try:
                 with st.spinner("Sokrates betrachtet die Aufgabe ..."):
                     answer = get_answer(api_key, model)
-                st.session_state.messages.append({"role": "assistant", "content": answer})
+                st.session_state.messages.append(
+                    {"role": "assistant", "content": answer}
+                )
                 st.rerun()
             except Exception as exc:
                 st.session_state.task_started = False
-                st.error(f"Die Anfrage konnte nicht verarbeitet werden: {exc}")
+                st.error(
+                    f"Die Anfrage konnte nicht verarbeitet werden: {exc}"
+                )
 
 else:
     if st.session_state.uploaded_name:
-        st.caption(f"📎 Aufgabe aus Datei: {st.session_state.uploaded_name}")
+        st.caption(
+            f"📎 Aufgabe aus Datei: {st.session_state.uploaded_name}"
+        )
 
     for message in st.session_state.messages[1:]:
         avatar = "🧭" if message["role"] == "assistant" else "🧑‍🎓"
         with st.chat_message(message["role"], avatar=avatar):
-            st.markdown(message["content"])
+            render_chat_content(message["content"])
 
-    student_message = st.chat_input("Dein Gedanke, deine Idee oder dein nächster Schritt ...")
+    student_message = st.chat_input(
+        "Dein Gedanke, deine Idee oder dein nächster Schritt ..."
+    )
 
     if student_message:
-        st.session_state.messages.append({"role": "user", "content": student_message})
+        st.session_state.messages.append(
+            {"role": "user", "content": student_message}
+        )
 
         with st.chat_message("user", avatar="🧑‍🎓"):
-            st.markdown(student_message)
+            render_chat_content(student_message)
 
         try:
             with st.chat_message("assistant", avatar="🧭"):
-                with st.spinner("Sokrates denkt über deinen Gedanken nach ..."):
+                with st.spinner(
+                    "Sokrates denkt über deinen Gedanken nach ..."
+                ):
                     answer = get_answer(api_key, model)
-                st.markdown(answer)
-            st.session_state.messages.append({"role": "assistant", "content": answer})
+                render_chat_content(answer)
+
+            st.session_state.messages.append(
+                {"role": "assistant", "content": answer}
+            )
         except Exception as exc:
-            st.error(f"Die Anfrage konnte nicht verarbeitet werden: {exc}")
+            st.error(
+                f"Die Anfrage konnte nicht verarbeitet werden: {exc}"
+            )
