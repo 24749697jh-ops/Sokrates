@@ -1,91 +1,42 @@
-# Sokrates – Mathematik-Lerncoach
+# Sokrates 0.4 – Didaktik-Engine
 
-> **Ich begleite dich – denken musst du selbst.**
+Diese Version verbessert die Qualität der Hilfen.
 
-Ein kleiner Streamlit-Prototyp, der Schülerinnen und Schüler beim Lösen von
-Mathematikaufgaben begleitet, ohne fertige Lösungen zu verraten.
+## Neue Bestandteile
 
-## Was die Version kann
+- `didactic_engine.py`
+  - erkennt grob das Aufgabengebiet,
+  - schätzt die Lernphase,
+  - stellt passende Lehrerfragen,
+  - enthält abgestufte Hinweise,
+  - berücksichtigt typische Fehler.
 
-- Aufgaben als Text entgegennehmen
-- PDFs, Bilder, DOCX- und Textdateien einlesen
-- mit einem mehrstufigen Tutorprinzip arbeiten:
-  1. Verstehen
-  2. Planen
-  3. Rechnen
-  4. Prüfen
-- konkrete Ansätze ehrlich loben
-- Fehler durch Rückfragen bearbeiten
-- auf Forderungen nach der fertigen Lösung nicht eingehen
-- Chatverlauf innerhalb der Sitzung behalten
+- `tutor_prompt.py`
+  - zwingt Sokrates zu einem kleinen nächsten Denkschritt,
+  - verbietet hilflose Antworten,
+  - enthält einen festen Fallback,
+  - beschränkt jede Antwort auf höchstens eine Frage.
 
-## Voraussetzungen
+- `APP_AENDERUNGEN.txt`
+  - zeigt die drei kleinen Änderungen, die in `app.py` nötig sind.
 
-- Python 3.10 oder neuer
-- ein OpenAI API-Key
+## Einbau auf GitHub
 
-Die Nutzung der OpenAI API verursacht abhängig vom gewählten Modell und
-Umfang der Dateien Kosten.
+1. `didactic_engine.py` neu hochladen.
+2. `tutor_prompt.py` ersetzen.
+3. Die drei Änderungen aus `APP_AENDERUNGEN.txt` in `app.py` übernehmen.
+4. Commit durchführen.
+5. Streamlit neu laden.
 
-## Installation
+## Erste Tests
 
-### Windows
+Teste mindestens diese Fälle:
 
-```powershell
-py -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-copy .env.example .env
-notepad .env
-streamlit run app.py
-```
+1. „Löse 3x + 5 = 20.“
+2. „Ein Rechteck ist 6 cm länger als breit und hat 40 cm Umfang.“
+3. „Ein Pullover kostet 80 Euro und wird um 25 % reduziert.“
+4. „Bestimme die Steigung der Geraden durch A(1|2) und B(5|10).“
+5. Eine handschriftliche Aufgabe aus GoodNotes.
 
-### macOS / Linux
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env
-nano .env
-streamlit run app.py
-```
-
-Trage in `.env` deinen API-Key ein:
-
-```env
-OPENAI_API_KEY=dein_api_key
-OPENAI_MODEL=gpt-5-mini
-```
-
-Danach öffnet sich Sokrates normalerweise unter:
-
-```text
-http://localhost:8501
-```
-
-## Ohne `.env`
-
-Der API-Key kann auch links in der Seitenleiste eingegeben werden. Er wird
-nicht in den Quellcode geschrieben und gilt nur für die laufende Sitzung.
-
-## Für einen schnellen Online-Test
-
-Das Projekt kann beispielsweise auf Streamlit Community Cloud bereitgestellt
-werden. Lege den API-Key dort als Secret ab und veröffentliche ihn niemals im
-Repository.
-
-## Datenschutz-Hinweis für den Unterricht
-
-Dieser Prototyp ist noch kein geprüftes Schulprodukt. Lade keine Dokumente mit
-Klarnamen, Noten, Gesundheitsdaten oder anderen personenbezogenen Angaben hoch.
-Vor einem regulären Schuleinsatz sollten Datenschutz, Auftragsverarbeitung,
-Einwilligungen, Löschkonzept und die Vorgaben des Schulträgers geprüft werden.
-
-## Bekannte Grenzen
-
-- Die KI kann mathematische Inhalte oder hochgeladene Aufgaben falsch lesen.
-- Der Prompt reduziert das Verraten von Lösungen, garantiert es aber nicht in
-  jedem denkbaren Dialog.
-- Es gibt noch keine Benutzerkonten, Klassenverwaltung oder Lernstatistik.
-- Der Chatverlauf bleibt nur in der aktuellen Browser-Sitzung.
+Erwartung:
+Sokrates stellt jeweils genau eine konkrete Frage und gibt keine vollständige Lösung.
