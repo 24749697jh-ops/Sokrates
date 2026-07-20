@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from streamlit_paste_button import paste_image_button
 
-from tutor_prompt import SOKRATES_INSTRUCTIONS
+from didactic_engine import build_tutor_instructions
 
 load_dotenv()
 
@@ -74,6 +74,7 @@ def reset_session() -> None:
     st.session_state.uploaded_name = None
     st.session_state.uploaded_bytes = None
     st.session_state.uploaded_mime = None
+    st.session_state.help_level = 1
 
 
 def ensure_state() -> None:
@@ -84,6 +85,7 @@ def ensure_state() -> None:
         "uploaded_name": None,
         "uploaded_bytes": None,
         "uploaded_mime": None,
+        "help_level": 1,
     }
     for key, value in defaults.items():
         if key not in st.session_state:
@@ -96,7 +98,6 @@ def data_url(file_bytes: bytes, mime_type: str) -> str:
 
 
 def store_pasted_image(image: Any) -> None:
-    """Speichert ein aus GoodNotes/der Zwischenablage eingefügtes Bild."""
     image_buffer = io.BytesIO()
     image.convert("RGB").save(image_buffer, format="PNG")
     st.session_state.uploaded_name = "goodnotes-zwischenablage.png"
@@ -110,9 +111,9 @@ def build_first_user_content(task_text: str) -> list[dict[str, Any]]:
     prompt = (
         "Hier ist meine Mathematikaufgabe. Beginne mit der Phase VERSTEHEN. "
         "Stelle zunächst genau eine hilfreiche Frage. "
-        "Rechne noch nichts vor und verrate kein Ergebnis. "
-        "Verwende für mathematische Schreibweisen ausschließlich "
-        "Streamlit-kompatibles Markdown-LaTeX mit $...$ oder $$...$$.\n\n"
+        "Rechne noch nichts vollständig vor und verrate kein Endergebnis. "
+        "Verwende mathematische Schreibweisen ausschließlich mit "
+        "$...$ oder $$...$$.\n\n"
         f"Zusätzlicher Text des Schülers:\n"
         f"{task_text.strip() or '(kein zusätzlicher Text)'}"
     )
@@ -171,16 +172,23 @@ def build_api_input() -> list[dict[str, Any]]:
 
 def get_answer(api_key: str, model: str) -> str:
     client = OpenAI(api_key=api_key)
+    instructions = build_tutor_instructions(
+        task_text=st.session_state.task_text,
+        messages=st.session_state.messages,
+        help_level=st.session_state.help_level,
+    )
+
     response = client.responses.create(
         model=model,
-        instructions=SOKRATES_INSTRUCTIONS,
+        instructions=instructions,
         input=build_api_input(),
         max_output_tokens=700,
     )
+
     answer = response.output_text.strip()
     return answer or (
-        "Ich habe gerade keine passende Rückfrage formulieren können. "
-        "Beschreibe bitte kurz, was du an der Aufgabe bereits verstanden hast."
+        "Was ist in der Aufgabe gesucht, und welche Angabe hilft dir "
+        "dabei wahrscheinlich als Erstes?"
     )
 
 
@@ -297,6 +305,7 @@ if not st.session_state.task_started:
                 {"role": "user", "content": task_text}
             ]
             st.session_state.task_started = True
+            st.session_state.help_level = 1
 
             try:
                 with st.spinner("Sokrates betrachtet die Aufgabe ..."):
@@ -321,6 +330,40 @@ else:
         avatar = "🧭" if message["role"] == "assistant" else "🧑‍🎓"
         with st.chat_message(message["role"], avatar=avatar):
             render_chat_content(message["content"])
+
+    st.caption(f"Aktuelle Hilfestufe: {st.session_state.help_level} von 4")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("💡 Kleiner Hinweis", use_container_width=True):
+            st.session_state.help_level = min(
+                4, st.session_state.help_level + 1
+            )
+            st.session_state.messages.append(
+                {
+                    "role": "user",
+                    "content": (
+                        "Ich brauche einen etwas deutlicheren Hinweis, "
+                        "aber noch keine vollständige Lösung."
+                    ),
+                }
+            )
+            try:
+                with st.spinner("Sokrates bereitet einen Hinweis vor ..."):
+                    answer = get_answer(api_key, model)
+                st.session_state.messages.append(
+                    {"role": "assistant", "content": answer}
+                )
+                st.rerun()
+            except Exception as exc:
+                st.error(
+                    f"Die Anfrage konnte nicht verarbeitet werden: {exc}"
+                )
+
+    with col2:
+        if st.button("↩️ Hilfestufe zurücksetzen", use_container_width=True):
+            st.session_state.help_level = 1
+            st.rerun()
 
     student_message = st.chat_input(
         "Dein Gedanke, deine Idee oder dein nächster Schritt ..."

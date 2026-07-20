@@ -6,148 +6,197 @@ from typing import Iterable
 
 
 @dataclass(frozen=True)
-class DidacticProfile:
-    topic: str
-    topic_label: str
-    question_bank: tuple[str, ...]
-    hint_ladder: tuple[str, ...]
+class TopicProfile:
+    key: str
+    label: str
+    questions: tuple[str, ...]
+    hints: tuple[str, ...]
     common_errors: tuple[str, ...]
 
 
-PROFILES: dict[str, DidacticProfile] = {
-    "linear_equation": DidacticProfile(
-        topic="linear_equation",
-        topic_label="lineare Gleichung",
-        question_bank=(
+TOPICS: dict[str, TopicProfile] = {
+    "linear_equation": TopicProfile(
+        key="linear_equation",
+        label="lineare Gleichung",
+        questions=(
             "Welche Rechenoperation steht der gesuchten Zahl im Moment am nächsten?",
-            "Welche Operation könntest du auf beiden Seiten rückgängig machen?",
-            "Was möchtest du zuerst vereinfachen?",
-            "Woran erkennst du, ob dein nächster Schritt die Gleichung unverändert lässt?",
+            "Welche Gegenoperation hebt den nächsten Rechenschritt auf?",
+            "Was musst du auf beiden Seiten gleich machen?",
+            "Wie kannst du deinen Wert anschließend durch Einsetzen prüfen?",
         ),
-        hint_ladder=(
+        hints=(
             "Betrachte zuerst nur die Operation direkt neben der Variablen.",
-            "Überlege, welche Gegenoperation diese Operation aufhebt.",
-            "Führe dieselbe Gegenoperation auf beiden Seiten aus.",
+            "Nutze die passende Gegenoperation auf beiden Seiten.",
+            "Vereinfache anschließend beide Seiten.",
+            "Bestimme die Variable und prüfe durch Einsetzen.",
         ),
         common_errors=(
-            "Operation nur auf einer Seite ausführen",
-            "Vorzeichen beim Umformen verlieren",
-            "zu viele Schritte auf einmal machen",
+            "Operation nur auf einer Seite durchführen",
+            "Vorzeichenfehler beim Umformen",
+            "Faktor vor der Variablen nicht berücksichtigen",
         ),
     ),
-    "geometry": DidacticProfile(
-        topic="geometry",
-        topic_label="Geometrie",
-        question_bank=(
-            "Welche Größen sind gegeben und welche Größe wird gesucht?",
-            "Welche Figur erkennst du, und welche Eigenschaften dieser Figur helfen dir?",
-            "Kannst du die Beziehungen zwischen den Größen zunächst in Worten beschreiben?",
-            "Welche Formel passt zu genau der gesuchten Größe?",
+    "fraction": TopicProfile(
+        key="fraction",
+        label="Bruchrechnung",
+        questions=(
+            "Welche Nenner kommen vor?",
+            "Welcher gemeinsame Nenner wäre geeignet?",
+            "Musst du zuerst erweitern oder kannst du bereits kürzen?",
+            "Welche Rechenregel gilt bei dieser Bruchoperation?",
         ),
-        hint_ladder=(
-            "Markiere zuerst Gegebenes und Gesuchtes.",
-            "Schreibe die passende Beziehung vollständig mit Größenbezeichnungen auf.",
-            "Setze erst danach die bekannten Werte ein.",
+        hints=(
+            "Schau zuerst nur auf die Nenner.",
+            "Finde einen gemeinsamen Nenner.",
+            "Erweitere die Brüche passend.",
+            "Führe die Rechnung aus und kürze am Ende.",
         ),
         common_errors=(
-            "Umfang und Flächeninhalt verwechseln",
-            "Einheiten nicht beachten",
-            "Formel zu früh mit Zahlen füllen",
+            "Zähler und Nenner getrennt addieren",
+            "falsch erweitern",
+            "Vorzeichen übersehen",
         ),
     ),
-    "percent": DidacticProfile(
-        topic="percent",
-        topic_label="Prozentrechnung",
-        question_bank=(
-            "Was ist hier der Grundwert, also das Ganze?",
-            "Welche Größe ist der Prozentsatz und welche der Prozentwert?",
-            "Kannst du die Situation zuerst mit 100 Prozent beschreiben?",
+    "percent": TopicProfile(
+        key="percent",
+        label="Prozentrechnung",
+        questions=(
+            "Was ist hier das Ganze, also der Grundwert?",
+            "Welche Größe ist der Prozentsatz?",
+            "Welche Größe ist der Prozentwert?",
             "Müsste das Ergebnis größer oder kleiner als der Grundwert sein?",
         ),
-        hint_ladder=(
-            "Ordne zuerst Grundwert, Prozentsatz und Prozentwert zu.",
+        hints=(
+            "Ordne Grundwert, Prozentsatz und Prozentwert zu.",
             "Denke von 100 Prozent zu 1 Prozent.",
             "Gehe von 1 Prozent zur gesuchten Prozentzahl.",
+            "Prüfe, ob das Ergebnis zur Situation passt.",
         ),
         common_errors=(
             "Grundwert und Prozentwert vertauschen",
             "Prozentzahl nicht durch 100 teilen",
-            "Plausibilitätsprüfung vergessen",
+            "Ergebnis nicht auf Plausibilität prüfen",
         ),
     ),
-    "function": DidacticProfile(
-        topic="function",
-        topic_label="Funktionen",
-        question_bank=(
+    "geometry": TopicProfile(
+        key="geometry",
+        label="Geometrie",
+        questions=(
+            "Welche Figur erkennst du?",
+            "Welche Größen sind gegeben und welche wird gesucht?",
+            "Welche Eigenschaft der Figur hilft dir weiter?",
+            "Welche Formel passt genau zur gesuchten Größe?",
+        ),
+        hints=(
+            "Markiere Gegebenes und Gesuchtes.",
+            "Schreibe die passende Formel zuerst ohne Zahlen auf.",
+            "Setze die bekannten Werte ein.",
+            "Achte auf die richtige Einheit.",
+        ),
+        common_errors=(
+            "Umfang und Flächeninhalt verwechseln",
+            "Einheiten nicht beachten",
+            "Formel falsch umstellen",
+        ),
+    ),
+    "function": TopicProfile(
+        key="function",
+        label="Funktionen",
+        questions=(
             "Welche Größe hängt von welcher anderen Größe ab?",
             "Was beschreibt die Steigung in dieser Situation?",
             "Welche Bedeutung hat der Anfangswert?",
-            "Kannst du einen Punkt oder ein Wertepaar aus der Aufgabe ablesen?",
+            "Welches Wertepaar kannst du zur Kontrolle einsetzen?",
         ),
-        hint_ladder=(
-            "Suche zuerst nach Anfangswert und Veränderung pro Schritt.",
+        hints=(
+            "Suche nach Anfangswert und Veränderung pro Schritt.",
             "Ordne diese Informationen einer Funktionsgleichung zu.",
-            "Prüfe die Gleichung an einem bekannten Wertepaar.",
+            "Setze ein bekanntes Wertepaar ein.",
+            "Prüfe, ob Graph und Gleichung zusammenpassen.",
         ),
         common_errors=(
             "Steigung und Anfangswert vertauschen",
             "x- und y-Werte verwechseln",
-            "Einheiten der Steigung ignorieren",
+            "Vorzeichen der Steigung falsch deuten",
         ),
     ),
-    "word_problem": DidacticProfile(
-        topic="word_problem",
-        topic_label="Textaufgabe",
-        question_bank=(
-            "Was ist in der Aufgabe bekannt?",
-            "Was soll am Ende herausgefunden werden?",
-            "Welche Beziehung zwischen den Größen wird im Text beschrieben?",
-            "Kannst du die Aufgabe in einem eigenen Satz zusammenfassen?",
+    "pythagoras": TopicProfile(
+        key="pythagoras",
+        label="Satz des Pythagoras",
+        questions=(
+            "Wo liegt der rechte Winkel?",
+            "Welche Seite ist die Hypotenuse?",
+            "Welche beiden Seiten sind Katheten?",
+            "Welche Länge soll berechnet werden?",
         ),
-        hint_ladder=(
-            "Unterstreiche zuerst Gegebenes und Gesuchtes.",
-            "Formuliere den Zusammenhang ohne Zahlen.",
-            "Übersetze erst danach den Zusammenhang in eine Rechnung oder Gleichung.",
+        hints=(
+            "Bestimme zuerst die Hypotenuse.",
+            "Ordne die Seiten in $a^2+b^2=c^2$ ein.",
+            "Setze die bekannten Längen ein.",
+            "Ziehe erst am Ende die Wurzel.",
+        ),
+        common_errors=(
+            "falsche Seite als Hypotenuse wählen",
+            "Wurzel vergessen",
+            "Einheiten nicht angeben",
+        ),
+    ),
+    "word_problem": TopicProfile(
+        key="word_problem",
+        label="Textaufgabe",
+        questions=(
+            "Was ist in der Aufgabe gegeben?",
+            "Was soll am Ende herausgefunden werden?",
+            "Welche Beziehung zwischen den Größen beschreibt der Text?",
+            "Kannst du den Zusammenhang zunächst in eigenen Worten ausdrücken?",
+        ),
+        hints=(
+            "Trenne Gegebenes und Gesuchtes.",
+            "Beschreibe den Zusammenhang ohne Zahlen.",
+            "Übersetze ihn in eine Rechnung oder Gleichung.",
+            "Prüfe, ob das Ergebnis zur Geschichte passt.",
         ),
         common_errors=(
             "zu früh rechnen",
-            "gesuchte Größe nicht eindeutig benennen",
-            "Textbeziehung falsch in eine Gleichung übersetzen",
+            "gesuchte Größe nicht klar benennen",
+            "Textbeziehung falsch übersetzen",
         ),
     ),
-    "arithmetic": DidacticProfile(
-        topic="arithmetic",
-        topic_label="Rechenaufgabe",
-        question_bank=(
-            "Welche Rechenregel ist hier als Nächstes wichtig?",
+    "arithmetic": TopicProfile(
+        key="arithmetic",
+        label="Rechenaufgabe",
+        questions=(
+            "Welche Rechenoperation kommt zuerst?",
             "Kannst du den Ausdruck in kleinere Teile zerlegen?",
-            "Welche Rechnung würdest du zuerst durchführen und warum?",
-            "Wie kannst du dein Zwischenergebnis überschlagen?",
+            "Welche Regel ist an dieser Stelle wichtig?",
+            "Wie kannst du das Ergebnis überschlagen?",
         ),
-        hint_ladder=(
-            "Achte auf die Reihenfolge der Rechenoperationen.",
+        hints=(
+            "Achte auf Klammern sowie Punkt vor Strich.",
             "Berechne zuerst einen klar abgegrenzten Teil.",
-            "Vergleiche das Ergebnis mit einem Überschlag.",
+            "Arbeite schrittweise weiter.",
+            "Vergleiche mit einem Überschlag.",
         ),
         common_errors=(
-            "Punkt-vor-Strich-Regel übersehen",
+            "Reihenfolge der Rechenoperationen übersehen",
             "Vorzeichenfehler",
-            "kein Überschlag",
+            "Zwischenschritte überspringen",
         ),
     ),
-    "general": DidacticProfile(
-        topic="general",
-        topic_label="Mathematikaufgabe",
-        question_bank=(
+    "general": TopicProfile(
+        key="general",
+        label="Mathematikaufgabe",
+        questions=(
             "Was verstehst du an der Aufgabe bereits sicher?",
             "Welche Information ist gegeben und was wird gesucht?",
-            "An welcher Stelle beginnt für dich die Unsicherheit?",
-            "Welcher kleine nächste Schritt wäre möglich, ohne schon alles zu lösen?",
+            "An welcher Stelle beginnt deine Unsicherheit?",
+            "Welcher kleine nächste Schritt wäre möglich?",
         ),
-        hint_ladder=(
+        hints=(
             "Trenne Gegebenes und Gesuchtes.",
-            "Beschreibe den mathematischen Zusammenhang in Worten.",
-            "Wähle danach eine passende Darstellung oder Formel.",
+            "Beschreibe den Zusammenhang in Worten.",
+            "Wähle eine passende Darstellung oder Formel.",
+            "Führe einen ersten kleinen Rechenschritt aus.",
         ),
         common_errors=(
             "zu viele Schritte gleichzeitig",
@@ -158,77 +207,186 @@ PROFILES: dict[str, DidacticProfile] = {
 }
 
 
-def classify_topic(text: str) -> str:
-    t = text.lower()
-
-    if any(w in t for w in ("prozent", "%", "rabatt", "mehrwertsteuer", "zins")):
-        return "percent"
-    if any(w in t for w in (
-        "rechteck", "dreieck", "kreis", "umfang", "fläche", "flächeninhalt",
-        "volumen", "winkel", "seite", "höhe", "radius", "durchmesser"
-    )):
-        return "geometry"
-    if any(w in t for w in (
-        "funktion", "steigung", "y-achse", "x-achse", "graph", "parabel",
-        "nullstelle", "funktionsgleichung"
-    )):
-        return "function"
-    if re.search(r"\b[a-zA-Z]\s*[+\-*/]?\s*\d*\s*=", text) or (
-        "=" in text and any(ch.isalpha() for ch in text)
-    ):
-        return "linear_equation"
-    if len(t.split()) > 18:
-        return "word_problem"
-    if any(op in text for op in ("+", "-", "·", "*", ":", "/", "^")):
-        return "arithmetic"
-    return "general"
-
-
-def infer_phase(messages: Iterable[dict]) -> str:
-    conversation = " ".join(
-        str(m.get("content", "")) for m in messages
+def _conversation_text(messages: Iterable[dict]) -> str:
+    return " ".join(
+        str(message.get("content", ""))
+        for message in messages
     ).lower()
 
-    if any(w in conversation for w in (
-        "probe", "prüfen", "kontrollieren", "stimmt das", "einsetzen"
+
+def classify_topic(task_text: str, messages: list[dict]) -> TopicProfile:
+    text = f"{task_text} {_conversation_text(messages)}".lower()
+
+    if any(term in text for term in ("pythagoras", "hypotenuse", "kathete")):
+        return TOPICS["pythagoras"]
+    if any(term in text for term in (
+        "prozent", "%", "rabatt", "mehrwertsteuer", "zins"
+    )):
+        return TOPICS["percent"]
+    if any(term in text for term in (
+        "bruch", "nenner", "zähler", "erweitern", "kürzen"
+    )) or re.search(r"\d+\s*/\s*\d+", text):
+        return TOPICS["fraction"]
+    if any(term in text for term in (
+        "rechteck", "dreieck", "kreis", "umfang", "fläche",
+        "flächeninhalt", "volumen", "winkel", "radius", "durchmesser"
+    )):
+        return TOPICS["geometry"]
+    if any(term in text for term in (
+        "funktion", "steigung", "y-achse", "x-achse",
+        "graph", "parabel", "nullstelle"
+    )):
+        return TOPICS["function"]
+    if re.search(r"\b[a-z]\s*[+\-*/]?\s*\d*\s*=", text) or (
+        "=" in text and any(char.isalpha() for char in text)
+    ):
+        return TOPICS["linear_equation"]
+    if len(task_text.split()) > 18:
+        return TOPICS["word_problem"]
+    if any(operator in text for operator in ("+", "-", "·", "*", ":", "/", "^")):
+        return TOPICS["arithmetic"]
+    return TOPICS["general"]
+
+
+def infer_phase(messages: list[dict]) -> str:
+    if not messages:
+        return "VERSTEHEN"
+
+    last_user_messages = [
+        str(message.get("content", "")).lower()
+        for message in messages
+        if message.get("role") == "user"
+    ]
+    recent = " ".join(last_user_messages[-3:])
+
+    if any(term in recent for term in (
+        "probe", "prüfen", "kontrollieren", "stimmt das",
+        "einsetzen", "ergebnis"
     )):
         return "PRÜFEN"
-    if any(w in conversation for w in (
-        "ich rechne", "ergibt", "ausgerechnet", "umformen", "eingesetzt"
+    if any(term in recent for term in (
+        "ich rechne", "ergibt", "ausgerechnet", "umformen",
+        "geteilt", "multipliziert", "addiert", "subtrahiert"
     )):
         return "RECHNEN"
-    if any(w in conversation for w in (
-        "formel", "gleichung aufstellen", "plan", "weg", "strategie"
+    if any(term in recent for term in (
+        "formel", "gleichung aufstellen", "plan", "strategie",
+        "ich würde", "mein weg"
     )):
         return "PLANEN"
     return "VERSTEHEN"
 
 
-def build_didactic_context(task_text: str, messages: list[dict]) -> str:
-    topic = classify_topic(task_text)
-    profile = PROFILES[topic]
-    phase = infer_phase(messages)
+def detect_response_pattern(messages: list[dict]) -> str:
+    assistant_messages = [
+        str(message.get("content", "")).lower()
+        for message in messages
+        if message.get("role") == "assistant"
+    ]
 
-    questions = "\n".join(f"- {q}" for q in profile.question_bank)
-    hints = "\n".join(
-        f"{i + 1}. {h}" for i, h in enumerate(profile.hint_ladder)
+    if len(assistant_messages) < 2:
+        return "keine Wiederholung erkennbar"
+
+    last = assistant_messages[-1]
+    previous = assistant_messages[-2]
+    overlap = set(last.split()) & set(previous.split())
+
+    if len(overlap) >= 8:
+        return (
+            "Die letzten beiden Antworten ähneln sich. "
+            "Formuliere diesmal deutlich anders."
+        )
+    return "keine Wiederholung erkennbar"
+
+
+def help_instruction(help_level: int, profile: TopicProfile) -> str:
+    level = max(1, min(4, help_level))
+    hint = profile.hints[level - 1]
+
+    levels = {
+        1: (
+            "Hilfestufe 1: Stelle eine kleine, konkrete Denkfrage. "
+            "Gib noch keinen Rechenschritt vor."
+        ),
+        2: (
+            "Hilfestufe 2: Gib einen kurzen Denkimpuls und stelle danach "
+            "eine konkrete Frage."
+        ),
+        3: (
+            "Hilfestufe 3: Mache einen kleinen Teilschritt sichtbar, "
+            "aber lasse den Lernenden den nächsten Schritt ausführen."
+        ),
+        4: (
+            "Hilfestufe 4: Entwickle den Lösungsweg gemeinsam in sehr "
+            "kleinen Schritten. Verrate trotzdem nicht sofort das Endergebnis."
+        ),
+    }
+
+    return f"{levels[level]}\nPassender Hinweis dieser Stufe: {hint}"
+
+
+def build_tutor_instructions(
+    task_text: str,
+    messages: list[dict],
+    help_level: int = 1,
+) -> str:
+    profile = classify_topic(task_text, messages)
+    phase = infer_phase(messages)
+    repetition_note = detect_response_pattern(messages)
+
+    question_list = "\n".join(
+        f"- {question}" for question in profile.questions
     )
-    errors = "\n".join(f"- {e}" for e in profile.common_errors)
+    error_list = "\n".join(
+        f"- {error}" for error in profile.common_errors
+    )
 
     return f"""
-DIDAKTISCHER KONTEXT FÜR DIESE AUFGABE
+Du bist Sokrates, ein geduldiger Mathematik-Lerncoach.
 
-Erkanntes Themenfeld: {profile.topic_label}
-Vermutete Lernphase: {phase}
+Motto:
+„Ich begleite dich – denken musst du selbst.“
 
-Geeignete Lehrerfragen:
-{questions}
+ZIEL
+Hilf dem Lernenden, den kleinsten sinnvollen nächsten Denkschritt selbst zu tun.
+Gib nicht sofort die vollständige Lösung und kein ungefragtes Endergebnis.
 
-Abgestufte Hinweise:
-{hints}
+ERKANNTER DIDAKTISCHER KONTEXT
+Thema: {profile.label}
+Phase: {phase}
+Wiederholungsprüfung: {repetition_note}
 
-Typische Fehler, auf die du aufmerksam achten sollst:
-{errors}
+PASSENDE LEHRERFRAGEN
+{question_list}
 
-Nutze diese Sammlung als Orientierung. Wähle niemals mehrere Fragen auf einmal.
+TYPISCHE FEHLER
+{error_list}
+
+{help_instruction(help_level, profile)}
+
+VERBINDLICHE ANTWORTREGELN
+- Antworte in 1 bis 4 kurzen Sätzen.
+- Stelle höchstens eine echte Frage.
+- Die Frage muss konkret zur Aufgabe und zur letzten Schüleräußerung passen.
+- Wiederhole nicht einfach die Aufgabenstellung.
+- Verwende keine Floskeln wie „Interessante Überlegung“.
+- Lobe nur konkret, zum Beispiel: „Bis hier hast du sauber umgeformt.“
+- Benenne Fehler freundlich und präzise.
+- Verwende mathematische Schreibweise nur mit $...$ oder $$...$$.
+- Führe niemals mehrere Lösungswege gleichzeitig ein.
+- Bleibe in der erkannten Phase, außer die letzte Schülerantwort zeigt klar,
+  dass die nächste Phase erreicht ist.
+
+INTERNE ENTSCHEIDUNG
+Entscheide still:
+1. Was hat der Lernende bereits verstanden?
+2. Wo liegt die aktuelle Hürde?
+3. Was ist der kleinste nächste Schritt?
+4. Braucht es eine Frage, einen Hinweis oder einen kleinen Teilschritt?
+5. Ist die Formulierung natürlich und nicht wiederholend?
+
+FALLBACK
+Du darfst niemals sagen, dass dir keine passende Frage einfällt.
+Wenn du unsicher bist, frage:
+„Welche Größe ist gesucht, und welche Angabe verbindet sie mit dem bereits Bekannten?“
 """.strip()
