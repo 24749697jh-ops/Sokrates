@@ -205,14 +205,15 @@ st.write(
 )
 
 with st.sidebar:
-    st.header("Einstellungen")
-    api_key = st.text_input(
-        "OpenAI API-Key",
-        value=os.getenv("OPENAI_API_KEY", ""),
-        type="password",
-        help="Der Schlüssel wird nur für diese laufende Sitzung verwendet.",
-    )
-    model = st.text_input("Modell", value=DEFAULT_MODEL)
+    st.header("Sokrates")
+
+    api_key = os.getenv("OPENAI_API_KEY")
+    model = DEFAULT_MODEL
+
+    if api_key:
+        st.success("✅ Sokrates ist bereit")
+    else:
+        st.error("Der OpenAI-Schlüssel wurde auf dem Server nicht eingerichtet.")
 
     st.divider()
     st.caption("Sokrates gibt keine fertigen Lösungen aus.")
@@ -293,7 +294,9 @@ if not st.session_state.task_started:
         )
 
         if not api_key:
-            st.error("Bitte trage links deinen OpenAI API-Key ein.")
+            st.error(
+                "Der OpenAI-Schlüssel wurde auf dem Server nicht eingerichtet."
+            )
         elif not has_task:
             st.error(
                 "Bitte gib eine Aufgabe ein, füge sie aus GoodNotes ein "
