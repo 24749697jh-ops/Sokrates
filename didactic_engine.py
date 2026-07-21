@@ -201,7 +201,7 @@ def classify_topic(task_text: str, messages: list[dict]) -> TopicProfile:
         return TOPICS["percent"]
     if any(t in text for t in ("bruch", "nenner", "zähler", "erweitern", "kürzen")) or re.search(r"\d+\s*/\s*\d+", text):
         return TOPICS["fraction"]
-    if any(t in text for t in ("rechteck", "dreieck", "kreis", "umfang", "fläche", "volumen", "höhe", "radius", "durchmesser", "prisma", "quader")):
+    if any(t in text for t in ("rechteck", "dreieck", "kreis", "kreisausschnitt", "kreisbogen", "sektor", "umfang", "fläche", "volumen", "höhe", "radius", "durchmesser", "prisma", "quader", "zylinder", "kegel", "kugel", "pyramide")):
         return TOPICS["geometry"]
     if any(t in text for t in ("funktion", "steigung", "graph", "parabel", "nullstelle")):
         return TOPICS["function"]
