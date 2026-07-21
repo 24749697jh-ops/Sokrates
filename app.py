@@ -19,7 +19,11 @@ from config import (
     MAX_FILE_SIZE_MB,
     SUPPORTED_TYPES,
 )
-from teacher_engine import build_teacher_instructions, topic_key_for
+from teacher_engine import (
+    build_teacher_instructions,
+    fallback_teacher_question,
+    topic_key_for,
+)
 from formula_ui import render_formula_workspace
 from ui_components import inject_styles
 
@@ -161,9 +165,13 @@ def get_answer(api_key: str, model: str) -> str:
         input=build_api_input(),
         max_output_tokens=700,
     )
-    return response.output_text.strip() or (
-        "Welche Größe ist gesucht, und welche Angabe verbindet sie "
-        "mit dem bereits Bekannten?"
+    answer = response.output_text.strip()
+    if answer:
+        return answer
+
+    return fallback_teacher_question(
+        st.session_state.task_text,
+        st.session_state.messages,
     )
 
 

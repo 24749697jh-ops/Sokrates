@@ -560,3 +560,13 @@ Verbindliche Regeln:
 
 def topic_key_for(task_text: str, messages: list[dict]) -> str:
     return classify_task(task_text, messages).topic_key
+
+
+def fallback_teacher_question(task_text: str, messages: list[dict]) -> str:
+    """Return a task-specific question if the model produces no usable text."""
+    task_type = classify_task(task_text, messages)
+    phase = infer_phase(messages)
+    question_index = len(
+        [message for message in messages if message.get("role") == "assistant"]
+    )
+    return _question_for_phase(task_type, phase, question_index)
