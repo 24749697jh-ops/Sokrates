@@ -40,7 +40,21 @@ def inject_styles() -> None:
             border: 1px solid rgba(128,128,128,.24);
             min-height: 3rem;
         }
+        
+        .math-dock-title {
+            font-weight: 750;
+            font-size: 1.05rem;
+            margin-top: 1rem;
+            margin-bottom: .2rem;
+        }
+        div[data-testid="stTextArea"] textarea {
+            font-size: 1.15rem;
+        }
+        div[data-testid="stButton"] button {
+            min-height: 2.65rem;
+        }
         </style>
+    
         """,
         unsafe_allow_html=True,
     )

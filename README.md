@@ -1,26 +1,35 @@
-# Sokrates 0.8.2
+# Sokrates 0.9
 
-Der Formeleditor wurde zu einer vollständigen mathematischen Eingabe erweitert.
+Version 0.9 baut den Eingabebereich vollständig neu auf.
 
-## Neu
+## Neue Oberfläche
 
-- vollständige griechische Kleinbuchstaben
-- wichtige griechische Großbuchstaben
-- Vergleichsoperatoren: ≠, ≈, ≤, ≥
-- ±, Prozent, Gradzeichen und Betrag
-- frei bearbeitbares Formelfeld
-- Bruch-Generator mit getrennten Feldern für Zähler und Nenner
-- Wurzel-Generator
-- Potenz-Generator
-- getrennte Tastaturbereiche für Zahlen, Operatoren, Griechisch und Variablen
-- mathematisch gesetzte Vorschau
+- dauerhafte Mathematik-Tastatur direkt unter dem Chat
+- sofort sichtbare Tasten für ², ³, √, π, α, β, γ und Δ
+- sofort sichtbare Rechenoperatoren
+- frei bearbeitbares Eingabefeld
+- Vorschau in mathematischer Schreibweise
+- Formelsammlung dauerhaft in der Seitenleiste
+- Formeln können mit einem Klick in die Eingabe übernommen werden
+- Formel-Builder für Brüche, Potenzen, Wurzeln und Indizes
+- vollständige griechische Tastatur unter „Weitere Zeichen und Formelvorlagen“
 
-## GitHub
+## Wichtig für GitHub
 
-Am einfachsten alle Dateien hochladen und gleichnamige Dateien ersetzen.
+Am saubersten ist es, alle Dateien aus dem ZIP hochzuladen und gleichnamige Dateien zu ersetzen.
 
-Für dieses Update besonders wichtig:
+Diese alten Dateien werden nicht mehr benötigt und sollten gelöscht werden:
 
-- `formula_library.py`
+- `formula_editor.py`
 - `formula_ui.py`
+- `tutor_prompt.py`
+
+Neu sind:
+
+- `math_keyboard.py`
+- `formula_sidebar.py`
+
+Aktualisiert wurden insbesondere:
+
 - `app.py`
+- `ui_components.py`

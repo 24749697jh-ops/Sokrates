@@ -24,7 +24,8 @@ from teacher_engine import (
     fallback_teacher_question,
     topic_key_for,
 )
-from formula_ui import render_formula_workspace
+from formula_sidebar import render_formula_sidebar
+from math_keyboard import render_math_input
 from ui_components import inject_styles
 
 load_dotenv()
@@ -77,6 +78,14 @@ def ensure_state() -> None:
         "root_value": "",
         "power_base": "",
         "power_exponent": "",
+        "math_input": "",
+        "builder_numerator": "",
+        "builder_denominator": "",
+        "builder_base": "",
+        "builder_exponent": "",
+        "builder_root": "",
+        "builder_index_base": "",
+        "builder_index_value": "",
     }
     for key, value in defaults.items():
         if key not in st.session_state:
@@ -221,6 +230,14 @@ with st.sidebar:
         reset_session()
         st.rerun()
 
+    if st.session_state.task_started:
+        sidebar_topic_key = topic_key_for(
+            st.session_state.task_text,
+            st.session_state.messages,
+        )
+        st.divider()
+        render_formula_sidebar(sidebar_topic_key)
+
 if not st.session_state.task_started:
     task_text = st.text_area(
         "Aufgabe als Text",
@@ -312,24 +329,11 @@ else:
             st.session_state.help_level = 1
             st.rerun()
 
-    topic_key = topic_key_for(
-        st.session_state.task_text,
-        st.session_state.messages,
-    )
-    formula_message = render_formula_workspace(topic_key)
-    if formula_message:
+    st.divider()
+    math_message = render_math_input()
+    if math_message:
         try:
-            send_student_message(formula_message, api_key, model)
-            st.rerun()
-        except Exception as exc:
-            st.error(f"Fehler: {exc}")
-
-    student_message = st.chat_input(
-        "Dein Gedanke, deine Idee oder dein nächster Schritt ..."
-    )
-    if student_message:
-        try:
-            send_student_message(student_message, api_key, model)
+            send_student_message(math_message, api_key, model)
             st.rerun()
         except Exception as exc:
             st.error(f"Die Anfrage konnte nicht verarbeitet werden: {exc}")
