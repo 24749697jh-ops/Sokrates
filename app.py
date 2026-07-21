@@ -13,7 +13,7 @@ from openai import OpenAI
 from streamlit_paste_button import paste_image_button
 
 from didactic_engine import build_tutor_instructions, classify_topic
-from formula_editor import SYMBOLS, formulas_for_topic
+from formula_editor import SYMBOLS, formulas_for_topic, readable_to_latex
 
 load_dotenv()
 
@@ -213,53 +213,98 @@ def send_student_message(message: str, api_key: str, model: str) -> None:
 
 
 def render_formula_editor(api_key: str, model: str) -> None:
-    profile = classify_topic(st.session_state.task_text, st.session_state.messages)
+    profile = classify_topic(
+        st.session_state.task_text,
+        st.session_state.messages,
+    )
     formulas = formulas_for_topic(profile.key)
 
     with st.expander("🧮 Formeln und Zeichen", expanded=False):
         st.caption(
-            f"Passende Auswahl zum Thema „{profile.label}“. "
-            "Wähle eine Formel oder baue eine eigene Eingabe."
+            f"Passende Formeln zum Thema „{profile.label}“. "
+            "Die Eingabe ist absichtlich ohne Programmierzeichen dargestellt."
         )
 
         for index, item in enumerate(formulas):
-            col_formula, col_button = st.columns([4, 1])
-            with col_formula:
+            with st.container(border=True):
                 st.markdown(f"**{item.label}**")
-                st.latex(item.latex)
+                st.markdown(
+                    f"<div style='font-size:1.35rem; font-weight:600; "
+                    f"padding:.35rem 0;'>{item.display_text}</div>",
+                    unsafe_allow_html=True,
+                )
                 st.caption(item.explanation)
-            with col_button:
-                if st.button(
-                    "Einfügen",
-                    key=f"formula_insert_{profile.key}_{index}",
-                    use_container_width=True,
-                ):
-                    append_formula_text(item.latex)
-                    st.rerun()
+
+                col_show, col_insert = st.columns(2)
+                with col_show:
+                    if st.button(
+                        "Sauber anzeigen",
+                        key=f"formula_show_{profile.key}_{index}",
+                        use_container_width=True,
+                    ):
+                        st.session_state["formula_preview_latex"] = item.latex
+                        st.session_state["formula_preview_label"] = item.label
+                        st.rerun()
+
+                with col_insert:
+                    if st.button(
+                        "In meine Eingabe",
+                        key=f"formula_insert_{profile.key}_{index}",
+                        use_container_width=True,
+                    ):
+                        append_formula_text(item.display_text)
+                        st.session_state["formula_preview_latex"] = item.latex
+                        st.session_state["formula_preview_label"] = item.label
+                        st.rerun()
+
+        selected_latex = st.session_state.get("formula_preview_latex")
+        if selected_latex:
+            st.markdown(
+                f"**Saubere Darstellung: "
+                f"{st.session_state.get('formula_preview_label', 'Formel')}**"
+            )
+            st.latex(selected_latex)
 
         st.divider()
-        st.markdown("**Mathematische Zeichen**")
+        st.markdown("**Eigene Formel schreiben**")
+        st.caption(
+            "Du kannst normale Zeichen verwenden, zum Beispiel: "
+            "A = Länge · Breite oder c = √(a² + b²)."
+        )
+
         cols = st.columns(5)
         for index, (label, value) in enumerate(SYMBOLS):
             with cols[index % 5]:
-                if st.button(label, key=f"symbol_{index}", use_container_width=True):
+                if st.button(
+                    label,
+                    key=f"symbol_{index}",
+                    use_container_width=True,
+                ):
                     append_formula_text(value)
                     st.rerun()
 
         st.text_area(
             "Deine Formel oder dein Rechenschritt",
             key="formula_draft",
-            height=100,
-            placeholder=r"Zum Beispiel: A=\mathrm{Länge}\cdot\mathrm{Breite}",
+            height=110,
+            placeholder="Zum Beispiel: A = Länge · Breite",
         )
 
         preview = st.session_state.formula_draft.strip()
         if preview:
-            st.caption("Vorschau")
+            st.caption("So hast du es eingegeben:")
+            st.markdown(
+                f"<div style='font-size:1.25rem; padding:.5rem; "
+                f"border:1px solid rgba(128,128,128,.25); border-radius:10px;'>"
+                f"{preview}</div>",
+                unsafe_allow_html=True,
+            )
+
+            st.caption("Mathematische Vorschau:")
             try:
-                st.latex(preview)
+                st.latex(readable_to_latex(preview))
             except Exception:
-                st.code(preview)
+                st.info(preview)
 
         col_send, col_clear = st.columns(2)
         with col_send:
@@ -269,7 +314,12 @@ def render_formula_editor(api_key: str, model: str) -> None:
                 use_container_width=True,
                 disabled=not bool(preview),
             ):
-                message = f"$${st.session_state.formula_draft.strip()}$$"
+                readable = st.session_state.formula_draft.strip()
+                latex = readable_to_latex(readable)
+                message = (
+                    f"Meine Formel bzw. mein Rechenschritt lautet: {readable}\n\n"
+                    f"Mathematisch dargestellt:\n$${latex}$$"
+                )
                 st.session_state.formula_draft = ""
                 send_student_message(message, api_key, model)
                 st.rerun()
