@@ -19,7 +19,7 @@ from config import (
     MAX_FILE_SIZE_MB,
     SUPPORTED_TYPES,
 )
-from didactic_engine import build_tutor_instructions, classify_topic
+from teacher_engine import build_teacher_instructions, topic_key_for
 from formula_ui import render_formula_workspace
 from ui_components import inject_styles
 
@@ -99,7 +99,7 @@ def build_first_user_content(task_text: str) -> list[dict[str, Any]]:
         {
             "type": "input_text",
             "text": (
-                "Hier ist meine Mathematikaufgabe. Beginne sofort mit VERSTEHEN. "
+                "Hier ist meine Mathematikaufgabe. Analysiere sie zuerst genau und beginne sofort mit VERSTEHEN. "
                 "Stelle genau eine fachliche Frage zur Aufgabe. Frage niemals, "
                 "ob du die Aufgabe lösen, erklären oder bearbeiten sollst. "
                 "Rechne noch nichts vollständig vor.\n\n"
@@ -150,7 +150,7 @@ def build_api_input() -> list[dict[str, Any]]:
 
 def get_answer(api_key: str, model: str) -> str:
     client = OpenAI(api_key=api_key)
-    instructions = build_tutor_instructions(
+    instructions = build_teacher_instructions(
         st.session_state.task_text,
         st.session_state.messages,
         st.session_state.help_level,
@@ -299,11 +299,11 @@ else:
             st.session_state.help_level = 1
             st.rerun()
 
-    profile = classify_topic(
+    topic_key = topic_key_for(
         st.session_state.task_text,
         st.session_state.messages,
     )
-    formula_message = render_formula_workspace(profile.key)
+    formula_message = render_formula_workspace(topic_key)
     if formula_message:
         try:
             send_student_message(formula_message, api_key, model)
