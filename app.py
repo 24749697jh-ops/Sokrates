@@ -12,7 +12,8 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from streamlit_paste_button import paste_image_button
 
-from didactic_engine import build_tutor_instructions
+from didactic_engine import build_tutor_instructions, classify_topic
+from formula_editor import SYMBOLS, formulas_for_topic
 
 load_dotenv()
 
@@ -75,6 +76,7 @@ def reset_session() -> None:
     st.session_state.uploaded_bytes = None
     st.session_state.uploaded_mime = None
     st.session_state.help_level = 1
+    st.session_state.formula_draft = ""
 
 
 def ensure_state() -> None:
@@ -86,6 +88,7 @@ def ensure_state() -> None:
         "uploaded_bytes": None,
         "uploaded_mime": None,
         "help_level": 1,
+        "formula_draft": "",
     }
     for key, value in defaults.items():
         if key not in st.session_state:
@@ -190,6 +193,92 @@ def get_answer(api_key: str, model: str) -> str:
         "Was ist in der Aufgabe gesucht, und welche Angabe hilft dir "
         "dabei wahrscheinlich als Erstes?"
     )
+
+
+def append_formula_text(text: str) -> None:
+    current = st.session_state.get("formula_draft", "")
+    separator = "" if not current or current.endswith((" ", "\n")) else " "
+    st.session_state.formula_draft = f"{current}{separator}{text}"
+
+
+def send_student_message(message: str, api_key: str, model: str) -> None:
+    cleaned = message.strip()
+    if not cleaned:
+        return
+
+    st.session_state.messages.append({"role": "user", "content": cleaned})
+    with st.spinner("Sokrates denkt über deinen Gedanken nach ..."):
+        answer = get_answer(api_key, model)
+    st.session_state.messages.append({"role": "assistant", "content": answer})
+
+
+def render_formula_editor(api_key: str, model: str) -> None:
+    profile = classify_topic(st.session_state.task_text, st.session_state.messages)
+    formulas = formulas_for_topic(profile.key)
+
+    with st.expander("🧮 Formeln und Zeichen", expanded=False):
+        st.caption(
+            f"Passende Auswahl zum Thema „{profile.label}“. "
+            "Wähle eine Formel oder baue eine eigene Eingabe."
+        )
+
+        for index, item in enumerate(formulas):
+            col_formula, col_button = st.columns([4, 1])
+            with col_formula:
+                st.markdown(f"**{item.label}**")
+                st.markdown(item.latex)
+                st.caption(item.explanation)
+            with col_button:
+                if st.button(
+                    "Einfügen",
+                    key=f"formula_insert_{profile.key}_{index}",
+                    use_container_width=True,
+                ):
+                    append_formula_text(item.latex)
+                    st.rerun()
+
+        st.divider()
+        st.markdown("**Mathematische Zeichen**")
+        cols = st.columns(5)
+        for index, (label, value) in enumerate(SYMBOLS):
+            with cols[index % 5]:
+                if st.button(label, key=f"symbol_{index}", use_container_width=True):
+                    append_formula_text(value)
+                    st.rerun()
+
+        st.text_area(
+            "Deine Formel oder dein Rechenschritt",
+            key="formula_draft",
+            height=100,
+            placeholder=r"Zum Beispiel: $A=\\text{Länge}\\cdot\\text{Breite}$",
+        )
+
+        preview = st.session_state.formula_draft.strip()
+        if preview:
+            st.caption("Vorschau")
+            render_chat_content(preview)
+
+        col_send, col_clear = st.columns(2)
+        with col_send:
+            if st.button(
+                "An Sokrates senden",
+                type="primary",
+                use_container_width=True,
+                disabled=not bool(preview),
+            ):
+                message = st.session_state.formula_draft
+                st.session_state.formula_draft = ""
+                send_student_message(message, api_key, model)
+                st.rerun()
+
+        with col_clear:
+            if st.button(
+                "Eingabe löschen",
+                use_container_width=True,
+                disabled=not bool(preview),
+            ):
+                st.session_state.formula_draft = ""
+                st.rerun()
 
 
 ensure_state()
@@ -368,30 +457,15 @@ else:
             st.session_state.help_level = 1
             st.rerun()
 
+    render_formula_editor(api_key, model)
+
     student_message = st.chat_input(
         "Dein Gedanke, deine Idee oder dein nächster Schritt ..."
     )
 
     if student_message:
-        st.session_state.messages.append(
-            {"role": "user", "content": student_message}
-        )
-
-        with st.chat_message("user", avatar="🧑‍🎓"):
-            render_chat_content(student_message)
-
         try:
-            with st.chat_message("assistant", avatar="🧭"):
-                with st.spinner(
-                    "Sokrates denkt über deinen Gedanken nach ..."
-                ):
-                    answer = get_answer(api_key, model)
-                render_chat_content(answer)
-
-            st.session_state.messages.append(
-                {"role": "assistant", "content": answer}
-            )
+            send_student_message(student_message, api_key, model)
+            st.rerun()
         except Exception as exc:
-            st.error(
-                f"Die Anfrage konnte nicht verarbeitet werden: {exc}"
-            )
+            st.error(f"Die Anfrage konnte nicht verarbeitet werden: {exc}")

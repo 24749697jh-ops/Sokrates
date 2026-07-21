@@ -1,30 +1,27 @@
-# Sokrates 0.5
+# Sokrates 0.6
 
-Diese Version verbindet die bestehende GoodNotes-/PDF-Funktion mit einer
-erweiterten Didaktik-Engine.
+Neu ist ein themenabhängiger Formeleditor.
 
-## Neu
+## Funktionen
 
-- automatische grobe Themenklassifikation
-- Erkennung der Lernphase
-- vier Hilfestufen
-- Button „Kleiner Hinweis“
-- passendere Lehrerfragen
-- typische Fehler pro Themengebiet
-- Prüfung auf wiederholte Antworten
-- fester Fallback statt hilfloser Formulierungen
+- Bereich „🧮 Formeln und Zeichen“
+- passende Formeln zum erkannten Thema
+- kurze Erklärung zu jeder Formel
+- Symboltasten für Rechenzeichen, Potenzen, Wurzeln und Brüche
+- eigene Formeleingabe
+- gerenderte Vorschau
+- direkte Übergabe an Sokrates
+- serverseitiger API-Key über Streamlit Secrets
 
-## Installation auf GitHub
-
-Ersetze oder ergänze im Repository:
+## Für GitHub hochladen
 
 - `app.py`
 - `didactic_engine.py`
+- `formula_editor.py`
 - `requirements.txt`
 
-Danach Commit durchführen. Streamlit startet die App automatisch neu.
+Das Secret bleibt:
 
-## Wichtig
-
-`tutor_prompt.py` wird in Version 0.5 nicht mehr benötigt. Er kann im Repository
-bleiben, wird aber von `app.py` nicht mehr verwendet.
+```toml
+OPENAI_API_KEY="dein-openai-api-key"
+```
