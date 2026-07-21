@@ -226,7 +226,7 @@ def render_formula_editor(api_key: str, model: str) -> None:
             col_formula, col_button = st.columns([4, 1])
             with col_formula:
                 st.markdown(f"**{item.label}**")
-                st.markdown(item.latex)
+                st.latex(item.latex)
                 st.caption(item.explanation)
             with col_button:
                 if st.button(
@@ -250,13 +250,16 @@ def render_formula_editor(api_key: str, model: str) -> None:
             "Deine Formel oder dein Rechenschritt",
             key="formula_draft",
             height=100,
-            placeholder=r"Zum Beispiel: $A=\\text{Länge}\\cdot\\text{Breite}$",
+            placeholder=r"Zum Beispiel: A=\mathrm{Länge}\cdot\mathrm{Breite}",
         )
 
         preview = st.session_state.formula_draft.strip()
         if preview:
             st.caption("Vorschau")
-            render_chat_content(preview)
+            try:
+                st.latex(preview)
+            except Exception:
+                st.code(preview)
 
         col_send, col_clear = st.columns(2)
         with col_send:
@@ -266,7 +269,7 @@ def render_formula_editor(api_key: str, model: str) -> None:
                 use_container_width=True,
                 disabled=not bool(preview),
             ):
-                message = st.session_state.formula_draft
+                message = f"$${st.session_state.formula_draft.strip()}$$"
                 st.session_state.formula_draft = ""
                 send_student_message(message, api_key, model)
                 st.rerun()
