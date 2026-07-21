@@ -99,9 +99,10 @@ def build_first_user_content(task_text: str) -> list[dict[str, Any]]:
         {
             "type": "input_text",
             "text": (
-                "Hier ist meine Mathematikaufgabe. Beginne mit VERSTEHEN. "
-                "Stelle zunächst genau eine hilfreiche Frage. Rechne noch "
-                "nichts vollständig vor.\n\n"
+                "Hier ist meine Mathematikaufgabe. Beginne sofort mit VERSTEHEN. "
+                "Stelle genau eine fachliche Frage zur Aufgabe. Frage niemals, "
+                "ob du die Aufgabe lösen, erklären oder bearbeiten sollst. "
+                "Rechne noch nichts vollständig vor.\n\n"
                 f"Zusätzlicher Text:\n{task_text.strip() or '(kein Text)'}"
             ),
         }
