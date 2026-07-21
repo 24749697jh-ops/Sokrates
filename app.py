@@ -248,9 +248,21 @@ def render_formula_editor(api_key: str, model: str) -> None:
         for index, item in enumerate(formulas):
             with st.container(border=True):
                 st.markdown(f"**{item.label}**")
+                display_text = getattr(item, "display_text", None)
+                if not display_text:
+                    display_text = getattr(item, "latex", item.label)
+                    display_text = (
+                        display_text
+                        .replace(r"\cdot", "·")
+                        .replace(r"\pi", "π")
+                        .replace(r"\Rightarrow", "→")
+                        .replace(r"\mathrm{", "")
+                        .replace("}", "")
+                    )
+
                 st.markdown(
                     f"<div style='font-size:1.35rem; font-weight:600; "
-                    f"padding:.35rem 0;'>{item.display_text}</div>",
+                    f"padding:.35rem 0;'>{display_text}</div>",
                     unsafe_allow_html=True,
                 )
                 st.caption(item.explanation)
@@ -272,7 +284,7 @@ def render_formula_editor(api_key: str, model: str) -> None:
                         key=f"formula_insert_{profile.key}_{index}",
                         use_container_width=True,
                     ):
-                        append_formula_text(item.display_text)
+                        append_formula_text(display_text)
                         st.session_state["formula_preview_latex"] = item.latex
                         st.session_state["formula_preview_label"] = item.label
                         st.rerun()
