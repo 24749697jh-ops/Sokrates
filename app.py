@@ -13,7 +13,7 @@ from openai import OpenAI
 from streamlit_paste_button import paste_image_button
 
 from didactic_engine import build_tutor_instructions, classify_topic
-from formula_editor import SYMBOLS, formulas_for_topic, readable_to_latex
+from formula_editor import SYMBOLS, formulas_for_topic
 
 load_dotenv()
 
@@ -194,6 +194,26 @@ def get_answer(api_key: str, model: str) -> str:
         "dabei wahrscheinlich als Erstes?"
     )
 
+
+
+def readable_to_latex(text: str) -> str:
+    """Wandelt eine schülerfreundliche Eingabe grob in LaTeX um."""
+    result = text.strip()
+    result = result.replace("·", r"\cdot ")
+    result = result.replace("−", "-")
+    result = result.replace("π", r"\pi ")
+    result = result.replace("²", "^2")
+    result = result.replace("³", "^3")
+
+    result = re.sub(r"√\(([^()]*)\)", r"\\sqrt{\1}", result)
+    result = re.sub(r"√([A-Za-z0-9]+)", r"\\sqrt{\1}", result)
+
+    result = re.sub(
+        r"(?<![\w)])([A-Za-z0-9]+)\s*/\s*([A-Za-z0-9]+)(?![\w(])",
+        r"\\frac{\1}{\2}",
+        result,
+    )
+    return result
 
 def append_formula_text(text: str) -> None:
     current = st.session_state.get("formula_draft", "")
