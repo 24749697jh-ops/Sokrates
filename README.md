@@ -1,48 +1,26 @@
-# Sokrates 0.8 – Teacher Engine
+# Sokrates 0.8.2
 
-Version 0.8 ersetzt die bisherige allgemeine Themenlogik durch eine Teacher Engine.
+Der Formeleditor wurde zu einer vollständigen mathematischen Eingabe erweitert.
 
-## Was sich ändert
+## Neu
 
-Sokrates erkennt nun nicht nur das Fachgebiet, sondern konkrete Aufgabentypen, zum Beispiel:
+- vollständige griechische Kleinbuchstaben
+- wichtige griechische Großbuchstaben
+- Vergleichsoperatoren: ≠, ≈, ≤, ≥
+- ±, Prozent, Gradzeichen und Betrag
+- frei bearbeitbares Formelfeld
+- Bruch-Generator mit getrennten Feldern für Zähler und Nenner
+- Wurzel-Generator
+- Potenz-Generator
+- getrennte Tastaturbereiche für Zahlen, Operatoren, Griechisch und Variablen
+- mathematisch gesetzte Vorschau
 
-- lineare Gleichung lösen
-- Brüche addieren oder subtrahieren
-- Prozentwert berechnen
-- Fläche eines Rechtecks oder Dreiecks
-- Kreisausschnitt
-- Kreisbogen
-- Satz des Pythagoras
-- Steigung einer linearen Funktion
-- Textaufgabe
-- Rechenausdruck
+## GitHub
 
-Für jeden Aufgabentyp kennt die Engine:
+Am einfachsten alle Dateien hochladen und gleichnamige Dateien ersetzen.
 
-- passende Einstiegsfragen
-- Planungsfragen
-- Rechenfragen
-- Prüffragen
-- abgestufte Hinweise
-- typische Fehler
+Für dieses Update besonders wichtig:
 
-Die allgemeine Standardfrage wird ausdrücklich unterdrückt, wenn eine passendere fachliche Frage möglich ist.
-
-## Für GitHub
-
-Am sichersten ist es, alle Dateien aus diesem ZIP in das Repository hochzuladen und gleichnamige Dateien zu ersetzen.
-
-Neu ist insbesondere:
-
-- `teacher_engine.py`
-
-Aktualisiert wurden:
-
+- `formula_library.py`
+- `formula_ui.py`
 - `app.py`
-- `didactic_engine.py`
-
-Das Streamlit Secret bleibt unverändert:
-
-```toml
-OPENAI_API_KEY="dein-openai-api-key"
-```

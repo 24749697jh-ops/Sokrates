@@ -72,6 +72,11 @@ def ensure_state() -> None:
         "formula_draft": "",
         "formula_latex_preview": "",
         "formula_keyboard_input": "",
+        "fraction_numerator": "",
+        "fraction_denominator": "",
+        "root_value": "",
+        "power_base": "",
+        "power_exponent": "",
     }
     for key, value in defaults.items():
         if key not in st.session_state:
